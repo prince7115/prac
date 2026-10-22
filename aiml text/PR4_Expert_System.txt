@@ -1,0 +1,104 @@
+# # PR4: Rule-Based Expert System (Forward and Backward Chaining)
+#
+# **Aim:** Build an expert system with propositional rules and use Forward and Backward chaining.
+#
+# - **Rule:** `IF conditions THEN conclusion` (example: `fever AND cough -> flu`)
+# - **Facts:** things we already know are true.
+# - **Forward chaining:** start from facts and keep applying rules until the goal appears. It is **data driven**.
+# - **Backward chaining:** start from the goal and check if facts or rules prove it. It is **goal driven**.
+
+
+# ## Knowledge base (medical example)
+#
+# Each rule is `(list of conditions, conclusion)`.
+
+
+rules = [
+    (["fever", "cough"], "flu"),
+    (["flu", "body_pain"], "see_doctor"),
+    (["sneezing", "runny_nose"], "cold"),
+    (["cold"], "take_rest"),
+]
+
+facts = ["fever", "cough", "body_pain"]
+
+print("Rules:")
+for r in rules:
+    print("  IF", " AND ".join(r[0]), "THEN", r[1])
+print("Facts:", facts)
+
+
+# ## Forward chaining
+#
+# Loop over the rules. If all conditions of a rule are in the known facts, add its conclusion. Repeat until nothing new is added.
+
+
+def forward_chaining(rules, facts, goal):
+    known = list(facts)          # copy of facts
+    changed = True
+
+    while changed:
+        changed = False
+        for conditions, conclusion in rules:
+            all_true = True
+            for c in conditions:
+                if c not in known:
+                    all_true = False
+
+            if all_true and conclusion not in known:
+                known.append(conclusion)
+                print("Rule fired:", conditions, "->", conclusion)
+                changed = True
+
+    return goal in known
+
+
+print("Goal reached?", forward_chaining(rules, facts, "see_doctor"))
+
+
+# ## Backward chaining
+#
+# To prove a goal:
+# 1. If the goal is already a fact, it is proved.
+# 2. Otherwise find a rule that concludes the goal and try to prove **every** condition of that rule (this is the recursive part).
+
+
+def backward_chaining(rules, facts, goal):
+    if goal in facts:
+        print("Fact found:", goal)
+        return True
+
+    for conditions, conclusion in rules:
+        if conclusion == goal:
+            print("To prove", goal, "we need", conditions)
+            all_proved = True
+            for c in conditions:
+                if not backward_chaining(rules, facts, c):
+                    all_proved = False
+            if all_proved:
+                return True
+
+    return False
+
+
+print("Goal reached?", backward_chaining(rules, facts, "see_doctor"))
+
+
+# ## Try a goal that cannot be proved
+
+
+print("Forward :", forward_chaining(rules, facts, "take_rest"))
+print("Backward:", backward_chaining(rules, facts, "take_rest"))
+
+
+# ## Viva points
+#
+# | | Forward chaining | Backward chaining |
+# |---|---|---|
+# | Starts from | Facts | Goal |
+# | Direction | Facts to goal | Goal to facts |
+# | Also called | Data driven | Goal driven |
+# | Good for | Monitoring, planning | Diagnosis, question answering |
+#
+# - Propositional logic: statements are only true or false (no variables).
+# - An expert system has three parts: **knowledge base** (rules + facts), **inference engine** (the chaining code), **user interface**.

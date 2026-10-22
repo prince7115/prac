@@ -1,0 +1,85 @@
+# # SIMPLE REFLEX MODEL
+
+
+def simple_reflex_model():
+    print("--------- SIMPLE REFLEX MODEL---------------")
+    print("write bye to exit")
+    while(True):
+        user_input = input("You:").lower().strip()
+        words = user_input.split()
+        if "bye" in words:
+            print("Bot: Goodbye!")
+            break
+        elif "hi" in words:
+            print("Bot: Hi, How may i help u today!")
+        elif "ai" in words:
+            print("Bot: Artificial intelligence is the new technology that is advancing at an exponential rate and is helping humans in their daily lives.")
+        else:
+            print("Bot: I do not understand!!")
+        
+simple_reflex_model()
+
+
+def performance(response):
+    if response != "I do not Understand!":
+        return "Good response"
+    return "Bad response"
+
+def environment(): return "User chatting in Jupyter Notebook"
+
+
+def actuator(response):
+    print("Bot:",response)
+
+
+def sensors():
+    user_input = input("You:").lower().strip()
+    return user_input
+
+
+def model_based_chatbot():
+    print("---------------MODEL BASED CHATBOT-------------------------")
+    print("type quit/bye/exit to exit")
+    print("Environment:", environment())
+    state = {
+            "name": None,
+            "topic": None
+        }
+
+    while(True):
+        
+        
+        user_input = sensors()
+        words = user_input.split()
+        if "bye" in words or "quit" in words or "exit" in words:
+            response = "Goodbye!"
+            actuator(response)
+            print("Performance:", performance(response))
+            break
+        elif "hi" in words:
+            response = "Hello, how may i help u today!"
+        elif "my name is" in user_input:
+            name = user_input.split("my name is",1)[1].strip()
+            state["name"] = name
+            response = "Hello " + state["name"]
+        elif "what is my name" in user_input:
+            if state["name"] is not None:
+                response = "ur name is " + state["name"]
+            else:
+                response = "idk ur name"
+        elif "ai" in words or "artificial intelligence" in user_input:
+            topic = "Artificial Intelligence"
+            state["topic"] = topic
+            response = "Artificial intelligence is the new technology that is advancing at an exponential rate and is helping humans in their daily lives."
+        elif "what were we talking about" in user_input:
+            if state["topic"] is not None:
+                response = "We were talking about " + state["topic"]
+            else:
+                response = "We were not discussing anything!"
+        else:
+            response = "I do not Understand!"
+        
+        actuator(response)
+        print("Performance:", performance(response))
+        
+model_based_chatbot()

@@ -1,0 +1,118 @@
+# # PR11: SVM with Cross Validation and Grid Search
+#
+# **Aim:** Train an SVM on the Pima Diabetes dataset (predict if a patient has diabetes), check it with cross validation, tune it with Grid Search and compare before and after.
+#
+# **SVM** draws the boundary (hyperplane) that has the **maximum margin** between the two classes.
+#
+# | Parameter | Meaning |
+# |---|---|
+# | `C` | Penalty for mistakes. Large C means a strict, tight fit (can overfit). |
+# | `kernel` | Shape of the boundary: `linear` or `rbf` (curved). |
+# | `gamma` | How far one point's influence reaches (for rbf). |
+
+
+# ## 1. Load, split and scale
+
+
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+url = "https://raw.githubusercontent.com/jbrownlee/Datasets/master/pima-indians-diabetes.data.csv"
+names = ["Pregnancies", "Glucose", "BloodPressure", "SkinThickness", "Insulin",
+         "BMI", "DiabetesPedigree", "Age", "Outcome"]
+df = pd.read_csv(url, names=names)
+
+print(df.shape)
+print("Missing values:", df.isnull().sum().sum())
+
+X = df.drop(columns=["Outcome"])
+y = df["Outcome"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+scaler = StandardScaler()
+X_train = scaler.fit_transform(X_train)
+X_test = scaler.transform(X_test)
+
+
+# ## 2. SVM before optimization (default settings)
+
+
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score, f1_score
+
+svm = SVC()
+svm.fit(X_train, y_train)
+pred = svm.predict(X_test)
+
+acc_before = accuracy_score(y_test, pred)
+f1_before = f1_score(y_test, pred)
+
+print("Before tuning -> Accuracy:", round(acc_before, 4), " F1:", round(f1_before, 4))
+
+
+# ## 3. Cross validation (5-fold)
+#
+# The training data is split into 5 parts. Each part is used once for testing and the other 4 for training. We then average the 5 scores.
+
+
+from sklearn.model_selection import cross_val_score
+
+scores = cross_val_score(SVC(), X_train, y_train, cv=5)
+
+print("Scores of each fold:", scores.round(4))
+print("Mean CV accuracy   :", round(scores.mean(), 4))
+
+
+# ## 4. Hyperparameter tuning with Grid Search
+#
+# Grid Search tries **every combination** of the values below (with cross validation) and keeps the best.
+
+
+from sklearn.model_selection import GridSearchCV
+
+param_grid = {
+    "C": [0.1, 1, 10, 100],
+    "kernel": ["linear", "rbf"],
+    "gamma": [0.001, 0.01, 0.1, 1],
+}
+
+grid = GridSearchCV(SVC(), param_grid, cv=5)
+grid.fit(X_train, y_train)
+
+print("Best parameters :", grid.best_params_)
+print("Best CV accuracy:", round(grid.best_score_, 4))
+
+
+# ## 5. SVM after optimization
+
+
+best_svm = grid.best_estimator_
+pred_best = best_svm.predict(X_test)
+
+acc_after = accuracy_score(y_test, pred_best)
+f1_after = f1_score(y_test, pred_best)
+
+print("After tuning -> Accuracy:", round(acc_after, 4), " F1:", round(f1_after, 4))
+
+
+# ## 6. Compare
+
+
+result = pd.DataFrame({
+    "": ["Before (default)", "After (Grid Search)"],
+    "CV accuracy": [scores.mean(), grid.best_score_],
+    "Test accuracy": [acc_before, acc_after],
+    "Test F1": [f1_before, f1_after],
+})
+print(result.round(4))
+
+
+# ## Viva points
+#
+# - **Cross validation** gives a more reliable score than a single train/test split.
+# - **Grid Search** = brute force over a grid of hyperparameters. `GridSearchCV` also does cross validation for each combination.
+# - **Hyperparameters** are set before training (C, kernel, gamma). **Parameters** are learned during training (weights).
+# - Kernel trick: lets SVM draw curved boundaries by mapping data to a higher dimension without computing it.
+# - SVM needs **scaled** features.

@@ -1,0 +1,66 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split 
+from sklearn.preprocessing import StandardScaler, PolynomialFeatures
+from sklearn.linear_model import LinearRegression
+import numpy as np
+
+
+df = pd.read_csv("california_housing.csv")
+print(df.shape)
+df.head()
+
+
+def mae(y_actual,y_predicted):
+    mae = np.mean(y_actual - y_predicted)
+    return mae
+def mse(y_actual,y_predicted):
+    mse = np.mean((y_actual - y_predicted)**2)
+    return mse
+def r2(y_actual,y_predicted):
+    r2 = 1- np.mean((y_actual - y_predicted)**2)/np.mean((y_actual - np.mean(y_actual))**2)
+    return r2
+
+
+df.isnull().sum()
+
+
+df.duplicated().sum()
+
+
+X = df.drop(columns = ["MedHouseVal"])
+y = df["MedHouseVal"]
+X_train, X_test, y_train, y_test = train_test_split(
+    X,
+    y,
+    test_size = 0.2,
+    random_state  = 42,
+)
+scalar = StandardScaler()
+X_train_s  = scalar.fit_transform(X_train)
+X_test_s = scalar.transform(X_test)
+
+
+lin = LinearRegression()
+lin.fit(X_train_s,y_train)
+pred_y = lin.predict(X_test_s)
+print(pred_y)
+mae_lin = mae(y_test, pred_y)
+mse_lin = mse(y_test, pred_y)
+r2_lin = r2(y_test, pred_y)
+print(mse_lin,mae_lin,r2_lin)
+
+
+poly = PolynomialFeatures(degree = 2)
+X_train_p = poly.fit_transform(X_train)
+X_test_p = poly.transform(X_test)
+
+lin.fit(X_train_p,y_train)
+pred_y_poly = lin.predict(X_test_p)
+print(pred_y_poly)
+
+
+result = pd.DataFrame({
+    "Model": ["linear Regression","polynomial"],
+    "MSE" : [mae_lin, mae_poly]
+})
